@@ -21,4 +21,5 @@ public class CommitDTO {
     private String authorEmail;
     private LocalDateTime timestamp;
     private String url;
+    private String repositoryId;
 }

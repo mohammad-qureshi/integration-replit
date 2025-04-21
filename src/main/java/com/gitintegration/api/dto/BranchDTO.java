@@ -16,4 +16,5 @@ public class BranchDTO {
     private String name;
     private String commitSha;
     private boolean isProtected;
+    private String repositoryId;
 }

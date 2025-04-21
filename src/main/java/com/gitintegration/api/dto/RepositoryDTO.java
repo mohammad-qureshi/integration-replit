@@ -22,4 +22,6 @@ public class RepositoryDTO {
     private String owner;
     private boolean isPrivate;
     private boolean isFork;
+    private String providerId;
+    private String repositoryId;
 }

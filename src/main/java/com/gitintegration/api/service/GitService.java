@@ -30,6 +30,19 @@ public interface GitService {
     Optional<RepositoryDTO> getRepository(String repositoryId);
     
     /**
+     * Get the name of the Git provider
+     * @return provider name (e.g., "github", "gitlab")
+     */
+    String getProviderName();
+    
+    /**
+     * Authenticate with the Git provider
+     * @param token authentication token
+     * @return true if authentication successful
+     */
+    boolean authenticate(String token);
+    
+    /**
      * Get branches for a repository
      * @param repositoryId repository identifier
      * @return list of branches
