@@ -1,35 +1,15 @@
 package com.gitintegration.api.exception;
 
-import lombok.Getter;
-
 /**
- * Custom exception for Git API related errors.
+ * Custom exception for Git API operations
  */
-@Getter
 public class GitApiException extends RuntimeException {
     
-    private final int statusCode;
-    
-    /**
-     * Constructs a new GitApiException with the specified detail message and status code.
-     * 
-     * @param message The detail message
-     * @param statusCode The HTTP status code
-     */
-    public GitApiException(String message, int statusCode) {
+    public GitApiException(String message) {
         super(message);
-        this.statusCode = statusCode;
     }
     
-    /**
-     * Constructs a new GitApiException with the specified detail message, cause, and status code.
-     * 
-     * @param message The detail message
-     * @param cause The cause
-     * @param statusCode The HTTP status code
-     */
-    public GitApiException(String message, Throwable cause, int statusCode) {
+    public GitApiException(String message, Throwable cause) {
         super(message, cause);
-        this.statusCode = statusCode;
     }
 }
