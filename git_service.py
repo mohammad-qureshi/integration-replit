@@ -8,7 +8,7 @@ class GitService:
         self.github_service = GitHubService()
         self.gitlab_service = GitLabService()
     
-    def parse_repository_identifier(self, provider: str, repository: str) -> Tuple[str, str]:
+    def parse_repository_identifier(self, provider: str, repository: str) -> Tuple[str, Optional[str]]:
         """
         Parse repository identifier based on provider.
         For GitHub: 'owner/repo' -> (owner, repo)
