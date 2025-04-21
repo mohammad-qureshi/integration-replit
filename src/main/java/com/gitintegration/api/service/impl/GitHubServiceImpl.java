@@ -70,6 +70,12 @@ public class GitHubServiceImpl implements GitService {
     public boolean isAuthenticated() {
         return authenticated;
     }
+    
+    @Override
+    public void setAuthToken(String token) {
+        this.token = token;
+        authenticate(token);
+    }
 
     @Override
     public List<RepositoryDTO> getRepositories() {
@@ -124,7 +130,17 @@ public class GitHubServiceImpl implements GitService {
             String[] parts = parseRepositoryId(repositoryId);
             String owner = parts[0];
             String repo = parts[1];
-
+            return getBranches(owner, repo);
+        } catch (Exception e) {
+            log.error("Failed to get branches for repository {}: {}", repositoryId, e.getMessage());
+            throw new GitApiException("Failed to get branches for repository: " + repositoryId, e);
+        }
+    }
+    
+    @Override
+    public List<BranchDTO> getBranches(String owner, String repo) {
+        try {
+            String repositoryId = owner + "/" + repo;
             List<Map<String, Object>> branchList = webClient.get()
                     .uri("/repos/{owner}/{repo}/branches", owner, repo)
                     .headers(this::setAuthHeader)
@@ -140,8 +156,8 @@ public class GitHubServiceImpl implements GitService {
             }
             return branches;
         } catch (Exception e) {
-            log.error("Failed to get branches for repository {}: {}", repositoryId, e.getMessage());
-            throw new GitApiException("Failed to get branches for repository: " + repositoryId, e);
+            log.error("Failed to get branches for repository {}/{}: {}", owner, repo, e.getMessage());
+            throw new GitApiException("Failed to get branches for repository: " + owner + "/" + repo, e);
         }
     }
 
@@ -235,7 +251,18 @@ public class GitHubServiceImpl implements GitService {
             String[] parts = parseRepositoryId(repositoryId);
             String owner = parts[0];
             String repo = parts[1];
-
+            return getCommits(owner, repo, branchName, limit);
+        } catch (Exception e) {
+            log.error("Failed to get commits for repository {}: {}", repositoryId, e.getMessage());
+            throw new GitApiException("Failed to get commits for repository: " + repositoryId, e);
+        }
+    }
+    
+    @Override
+    public List<CommitDTO> getCommits(String owner, String repo, String branchName, int limit) {
+        try {
+            String repositoryId = owner + "/" + repo;
+            
             // Build URI with query parameters
             String uri = "/repos/{owner}/{repo}/commits?per_page={limit}";
             Map<String, Object> uriVariables = new HashMap<>();
@@ -263,8 +290,8 @@ public class GitHubServiceImpl implements GitService {
             }
             return commits;
         } catch (Exception e) {
-            log.error("Failed to get commits for repository {}: {}", repositoryId, e.getMessage());
-            throw new GitApiException("Failed to get commits for repository: " + repositoryId, e);
+            log.error("Failed to get commits for repository {}/{}: {}", owner, repo, e.getMessage());
+            throw new GitApiException("Failed to get commits for repository: " + owner + "/" + repo, e);
         }
     }
 
@@ -406,7 +433,18 @@ public class GitHubServiceImpl implements GitService {
             String[] parts = parseRepositoryId(repositoryId);
             String owner = parts[0];
             String repo = parts[1];
-
+            return getPullRequests(owner, repo, state);
+        } catch (Exception e) {
+            log.error("Failed to get pull requests for repository {}: {}", repositoryId, e.getMessage());
+            throw new GitApiException("Failed to get pull requests for repository: " + repositoryId, e);
+        }
+    }
+    
+    @Override
+    public List<PullRequestDTO> getPullRequests(String owner, String repo, String state) {
+        try {
+            String repositoryId = owner + "/" + repo;
+            
             List<Map<String, Object>> prList = webClient.get()
                     .uri("/repos/{owner}/{repo}/pulls?state={state}", owner, repo, state)
                     .headers(this::setAuthHeader)
@@ -422,8 +460,8 @@ public class GitHubServiceImpl implements GitService {
             }
             return pullRequests;
         } catch (Exception e) {
-            log.error("Failed to get pull requests for repository {}: {}", repositoryId, e.getMessage());
-            throw new GitApiException("Failed to get pull requests for repository: " + repositoryId, e);
+            log.error("Failed to get pull requests for repository {}/{}: {}", owner, repo, e.getMessage());
+            throw new GitApiException("Failed to get pull requests for repository: " + owner + "/" + repo, e);
         }
     }
 
