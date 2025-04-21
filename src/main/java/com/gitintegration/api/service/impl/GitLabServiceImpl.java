@@ -5,7 +5,7 @@ import com.gitintegration.api.dto.CommitDTO;
 import com.gitintegration.api.dto.PullRequestDTO;
 import com.gitintegration.api.dto.RepositoryDTO;
 import com.gitintegration.api.exception.GitApiException;
-import com.gitintegration.api.service.GitService;
+import com.gitintegration.api.service.GitLabService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -17,12 +17,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-/**
- * GitLab implementation of the GitService interface
- */
 @Service
 @Slf4j
-public class GitLabServiceImpl implements GitService {
+public class GitLabServiceImpl implements GitLabService {
 
     private final WebClient webClient;
     private String token;
@@ -31,7 +28,6 @@ public class GitLabServiceImpl implements GitService {
     public GitLabServiceImpl(@Value("${gitlab.api.url:https://gitlab.com/api/v4}") String baseUrl) {
         this.webClient = WebClient.builder()
                 .baseUrl(baseUrl)
-                .defaultHeader(HttpHeaders.ACCEPT, "application/json")
                 .defaultHeader(HttpHeaders.USER_AGENT, "Git-Integration-API")
                 .build();
     }
@@ -45,7 +41,6 @@ public class GitLabServiceImpl implements GitService {
     public boolean authenticate(String token) {
         this.token = token;
         try {
-            // Test authentication by getting user info
             webClient.get()
                     .uri("/user")
                     .headers(this::setAuthHeader)
@@ -64,6 +59,12 @@ public class GitLabServiceImpl implements GitService {
     @Override
     public boolean isAuthenticated() {
         return authenticated;
+    }
+
+    @Override
+    public void setAuthToken(String token) {
+        this.token = token;
+        authenticate(token);
     }
 
     @Override
@@ -110,10 +111,10 @@ public class GitLabServiceImpl implements GitService {
     }
 
     @Override
-    public List<BranchDTO> getBranches(String repositoryId) {
+    public List<BranchDTO> getBranches(String projectId) {
         try {
             List<Map<String, Object>> branchList = webClient.get()
-                    .uri("/projects/{id}/repository/branches", repositoryId)
+                    .uri("/projects/{projectId}/repository/branches", projectId)
                     .headers(this::setAuthHeader)
                     .retrieve()
                     .bodyToMono(List.class)
@@ -122,13 +123,13 @@ public class GitLabServiceImpl implements GitService {
             List<BranchDTO> branches = new ArrayList<>();
             if (branchList != null) {
                 for (Map<String, Object> branch : branchList) {
-                    branches.add(mapToBranchDTO(branch, repositoryId));
+                    branches.add(mapToBranchDTO(branch, projectId));
                 }
             }
             return branches;
         } catch (Exception e) {
-            log.error("Failed to get branches for repository {}: {}", repositoryId, e.getMessage());
-            throw new GitApiException("Failed to get branches for repository: " + repositoryId, e);
+            log.error("Failed to get GitLab branches: {}", e.getMessage());
+            throw new GitApiException("Failed to get GitLab branches", e);
         }
     }
 
@@ -196,21 +197,14 @@ public class GitLabServiceImpl implements GitService {
     }
 
     @Override
-    public List<CommitDTO> getCommits(String repositoryId, String branchName, int limit) {
+    public List<CommitDTO> getCommits(String projectId, String branch, int limit) {
         try {
-            // Build URI with query parameters
-            String uri = "/projects/{id}/repository/commits?per_page={limit}";
-            Map<String, Object> uriVariables = new HashMap<>();
-            uriVariables.put("id", repositoryId);
-            uriVariables.put("limit", limit);
-
-            if (branchName != null && !branchName.isEmpty()) {
-                uri += "&ref_name={branch}";
-                uriVariables.put("branch", branchName);
-            }
-
             List<Map<String, Object>> commitList = webClient.get()
-                    .uri(uri, uriVariables)
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/projects/{projectId}/repository/commits")
+                            .queryParam("ref_name", branch)
+                            .queryParam("per_page", limit)
+                            .build(projectId))
                     .headers(this::setAuthHeader)
                     .retrieve()
                     .bodyToMono(List.class)
@@ -219,13 +213,13 @@ public class GitLabServiceImpl implements GitService {
             List<CommitDTO> commits = new ArrayList<>();
             if (commitList != null) {
                 for (Map<String, Object> commit : commitList) {
-                    commits.add(mapToCommitDTO(commit, repositoryId));
+                    commits.add(mapToCommitDTO(commit, projectId));
                 }
             }
             return commits;
         } catch (Exception e) {
-            log.error("Failed to get commits for repository {}: {}", repositoryId, e.getMessage());
-            throw new GitApiException("Failed to get commits for repository: " + repositoryId, e);
+            log.error("Failed to get GitLab commits: {}", e.getMessage());
+            throw new GitApiException("Failed to get GitLab commits", e);
         }
     }
 
@@ -278,25 +272,24 @@ public class GitLabServiceImpl implements GitService {
 
     private List<Map<String, Object>> prepareCommitActions(Map<String, String> files) {
         List<Map<String, Object>> actions = new ArrayList<>();
-        
+
         for (Map.Entry<String, String> entry : files.entrySet()) {
             Map<String, Object> action = new HashMap<>();
-            action.put("action", "update"); // or "create" if new file
+            action.put("action", "update"); 
             action.put("file_path", entry.getKey());
             action.put("content", entry.getValue());
-            
+
             actions.add(action);
         }
-        
+
         return actions;
     }
 
     @Override
     public List<PullRequestDTO> getPullRequests(String repositoryId, String state) {
         try {
-            // Map GitHub state format to GitLab
             String gitlabState = mapToGitLabState(state);
-            
+
             List<Map<String, Object>> mrList = webClient.get()
                     .uri("/projects/{id}/merge_requests?state={state}", repositoryId, gitlabState)
                     .headers(this::setAuthHeader)
@@ -314,6 +307,32 @@ public class GitLabServiceImpl implements GitService {
         } catch (Exception e) {
             log.error("Failed to get merge requests for repository {}: {}", repositoryId, e.getMessage());
             throw new GitApiException("Failed to get merge requests for repository: " + repositoryId, e);
+        }
+    }
+    @Override
+    public List<PullRequestDTO> getMergeRequests(String projectId, String state) {
+        try {
+            String gitLabState = mapToGitLabState(state);
+            List<Map<String, Object>> mrList = webClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/projects/{projectId}/merge_requests")
+                            .queryParam("state", gitLabState)
+                            .build(projectId))
+                    .headers(this::setAuthHeader)
+                    .retrieve()
+                    .bodyToMono(List.class)
+                    .block();
+
+            List<PullRequestDTO> mergeRequests = new ArrayList<>();
+            if (mrList != null) {
+                for (Map<String, Object> mr : mrList) {
+                    mergeRequests.add(mapToPullRequestDTO(mr, projectId));
+                }
+            }
+            return mergeRequests;
+        } catch (Exception e) {
+            log.error("Failed to get GitLab merge requests: {}", e.getMessage());
+            throw new GitApiException("Failed to get GitLab merge requests", e);
         }
     }
 
@@ -368,9 +387,8 @@ public class GitLabServiceImpl implements GitService {
     @Override
     public PullRequestDTO updatePullRequest(String repositoryId, String pullRequestId, String state) {
         try {
-            // Map GitHub state to GitLab state
             String gitlabState = mapToGitLabStateAction(state);
-            
+
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("state_event", gitlabState);
 
@@ -410,10 +428,9 @@ public class GitLabServiceImpl implements GitService {
         }
     }
 
-    // Helper methods
     private void setAuthHeader(HttpHeaders headers) {
         if (token != null && !token.isEmpty()) {
-            headers.set("PRIVATE-TOKEN", token);
+            headers.setBearerAuth(token);
         }
     }
 
@@ -441,7 +458,7 @@ public class GitLabServiceImpl implements GitService {
     private CommitDTO mapToCommitDTO(Map<String, Object> commitData, String repositoryId) {
         String timestamp = (String) commitData.get("created_at");
         LocalDateTime dateTime = LocalDateTime.parse(timestamp, DateTimeFormatter.ISO_DATE_TIME);
-        
+
         return CommitDTO.builder()
                 .sha((String) commitData.get("id"))
                 .message((String) commitData.get("message"))
@@ -453,20 +470,19 @@ public class GitLabServiceImpl implements GitService {
 
     private PullRequestDTO mapToPullRequestDTO(Map<String, Object> mrData, String repositoryId) {
         Map<String, Object> author = (Map<String, Object>) mrData.get("author");
-        
+
         String createdAt = (String) mrData.get("created_at");
         LocalDateTime dateTime = LocalDateTime.parse(createdAt, DateTimeFormatter.ISO_DATE_TIME);
-        
-        // Map GitLab state to common format (open, closed, merged)
+
         String state = (String) mrData.get("state");
         if ("merged".equals(state)) {
             state = "merged";
         } else if ("closed".equals(state)) {
             state = "closed";
         } else {
-            state = "open"; // "opened" in GitLab becomes "open"
+            state = "open";
         }
-        
+
         return PullRequestDTO.builder()
                 .id(Long.valueOf(mrData.get("id").toString()))
                 .number(Integer.valueOf(mrData.get("iid").toString()))
@@ -480,7 +496,7 @@ public class GitLabServiceImpl implements GitService {
                 .repositoryId(repositoryId)
                 .build();
     }
-    
+
     private String mapToGitLabState(String state) {
         switch (state.toLowerCase()) {
             case "open":
@@ -495,7 +511,7 @@ public class GitLabServiceImpl implements GitService {
                 return "opened";
         }
     }
-    
+
     private String mapToGitLabStateAction(String state) {
         switch (state.toLowerCase()) {
             case "open":
@@ -504,6 +520,14 @@ public class GitLabServiceImpl implements GitService {
                 return "close";
             default:
                 return "reopen";
+        }
+    }
+    @Override
+    public String parseRepositoryId(String repositoryId) {
+        try {
+            return repositoryId.replace("/", "%2F");
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid GitLab project ID format");
         }
     }
 }
