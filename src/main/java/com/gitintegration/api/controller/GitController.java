@@ -423,3 +423,108 @@ public class GitController {
         return ResponseEntity.ok(response);
     }
 }
+package com.gitintegration.api.controller;
+
+import com.gitintegration.api.dto.BranchDTO;
+import com.gitintegration.api.dto.CommitDTO;
+import com.gitintegration.api.dto.PullRequestDTO;
+import com.gitintegration.api.dto.RepositoryDTO;
+import com.gitintegration.api.service.GitService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/api/git")
+@RequiredArgsConstructor
+public class GitController {
+    
+    private final GitService gitService;
+    
+    @GetMapping("/repositories")
+    public ResponseEntity<List<RepositoryDTO>> getRepositories() {
+        return ResponseEntity.ok(gitService.getRepositories());
+    }
+    
+    @GetMapping("/repositories/{repositoryId}")
+    public ResponseEntity<RepositoryDTO> getRepository(@PathVariable String repositoryId) {
+        return gitService.getRepository(repositoryId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    @GetMapping("/repositories/{repositoryId}/branches")
+    public ResponseEntity<List<BranchDTO>> getBranches(@PathVariable String repositoryId) {
+        return ResponseEntity.ok(gitService.getBranches(repositoryId));
+    }
+    
+    @GetMapping("/repositories/{repositoryId}/commits")
+    public ResponseEntity<List<CommitDTO>> getCommits(
+            @PathVariable String repositoryId,
+            @RequestParam(required = false) String branch,
+            @RequestParam(defaultValue = "10") int limit) {
+        return ResponseEntity.ok(gitService.getCommits(repositoryId, branch, limit));
+    }
+    
+    @GetMapping("/repositories/{repositoryId}/pulls")
+    public ResponseEntity<List<PullRequestDTO>> getPullRequests(
+            @PathVariable String repositoryId,
+            @RequestParam(defaultValue = "open") String state) {
+        return ResponseEntity.ok(gitService.getPullRequests(repositoryId, state));
+    }
+    
+    @PostMapping("/repositories/{repositoryId}/branches")
+    public ResponseEntity<BranchDTO> createBranch(
+            @PathVariable String repositoryId,
+            @RequestParam String branchName,
+            @RequestParam String sourceBranch) {
+        return ResponseEntity.ok(gitService.createBranch(repositoryId, branchName, sourceBranch));
+    }
+    
+    @DeleteMapping("/repositories/{repositoryId}/branches/{branchName}")
+    public ResponseEntity<Void> deleteBranch(
+            @PathVariable String repositoryId,
+            @PathVariable String branchName) {
+        boolean deleted = gitService.deleteBranch(repositoryId, branchName);
+        return deleted ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+    }
+    
+    @PostMapping("/repositories/{repositoryId}/commits")
+    public ResponseEntity<CommitDTO> createCommit(
+            @PathVariable String repositoryId,
+            @RequestParam String branch,
+            @RequestParam String message,
+            @RequestBody Map<String, String> files) {
+        return ResponseEntity.ok(gitService.createCommit(repositoryId, branch, message, files));
+    }
+    
+    @PostMapping("/repositories/{repositoryId}/pulls")
+    public ResponseEntity<PullRequestDTO> createPullRequest(
+            @PathVariable String repositoryId,
+            @RequestParam String title,
+            @RequestParam String sourceBranch,
+            @RequestParam String targetBranch,
+            @RequestParam(required = false) String description) {
+        return ResponseEntity.ok(gitService.createPullRequest(repositoryId, title, sourceBranch, targetBranch, description));
+    }
+    
+    @PatchMapping("/repositories/{repositoryId}/pulls/{pullRequestId}")
+    public ResponseEntity<PullRequestDTO> updatePullRequest(
+            @PathVariable String repositoryId,
+            @PathVariable String pullRequestId,
+            @RequestParam String state) {
+        return ResponseEntity.ok(gitService.updatePullRequest(repositoryId, pullRequestId, state));
+    }
+    
+    @PostMapping("/repositories/{repositoryId}/pulls/{pullRequestId}/merge")
+    public ResponseEntity<Void> mergePullRequest(
+            @PathVariable String repositoryId,
+            @PathVariable String pullRequestId) {
+        boolean merged = gitService.mergePullRequest(repositoryId, pullRequestId);
+        return merged ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+    }
+}
