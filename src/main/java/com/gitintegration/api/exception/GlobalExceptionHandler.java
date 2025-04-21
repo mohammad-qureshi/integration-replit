@@ -1,48 +1,66 @@
 package com.gitintegration.api.exception;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Global exception handler for the application
+ * Global exception handler for the API
  */
 @ControllerAdvice
-@Slf4j
-public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+public class GlobalExceptionHandler {
 
+    /**
+     * Handle GitApiException
+     * @param ex the exception
+     * @return error response
+     */
     @ExceptionHandler(GitApiException.class)
-    public ResponseEntity<Object> handleGitApiException(GitApiException ex) {
-        log.error("Git API Exception: {}", ex.getMessage());
-        return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Object> handleIllegalArgumentException(IllegalArgumentException ex) {
-        log.error("Illegal Argument Exception: {}", ex.getMessage());
-        return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Object> handleAllUncaughtException(Exception ex) {
-        log.error("Unexpected error occurred: ", ex);
-        return buildErrorResponse("An unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    private ResponseEntity<Object> buildErrorResponse(String message, HttpStatus status) {
+    public ResponseEntity<Map<String, Object>> handleGitApiException(GitApiException ex) {
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now().toString());
-        body.put("status", status.value());
-        body.put("error", status.getReasonPhrase());
-        body.put("message", message);
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("error", "Bad Request");
+        body.put("message", ex.getMessage());
         
-        return new ResponseEntity<>(body, status);
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+    
+    /**
+     * Handle WebClientResponseException
+     * @param ex the exception
+     * @return error response
+     */
+    @ExceptionHandler(WebClientResponseException.class)
+    public ResponseEntity<Map<String, Object>> handleWebClientResponseException(WebClientResponseException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now().toString());
+        body.put("status", ex.getStatusCode().value());
+        body.put("error", ex.getStatusText());
+        body.put("message", "Error from Git provider API: " + ex.getMessage());
+        
+        return new ResponseEntity<>(body, ex.getStatusCode());
+    }
+    
+    /**
+     * Handle all other exceptions
+     * @param ex the exception
+     * @return error response
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleGeneralException(Exception ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now().toString());
+        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        body.put("error", "Internal Server Error");
+        body.put("message", ex.getMessage());
+        
+        return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

@@ -1,39 +1,34 @@
 package com.gitintegration.api.auth;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 
-import java.util.HashMap;
-import java.util.Map;
+import static org.springframework.security.config.Customizer.withDefaults;
 
 /**
- * Configuration for Git provider authentication
+ * Spring Security configuration for API authentication
  */
 @Configuration
-@ConfigurationProperties(prefix = "git.auth")
+@EnableWebSecurity
 public class AuthenticationConfiguration {
-    
+
     /**
-     * Map of provider -> tokens
-     * Example in properties:
-     * git.auth.tokens.github=GITHUB_TOKEN
-     * git.auth.tokens.gitlab=GITLAB_TOKEN
+     * Configure security for the application
+     * For this API, we're using API keys for authentication with Git providers,
+     * not for authenticating users to our API. So we disable CSRF and allow all requests.
      */
-    private Map<String, String> tokens = new HashMap<>();
-    
-    public Map<String, String> getTokens() {
-        return tokens;
-    }
-    
-    public void setTokens(Map<String, String> tokens) {
-        this.tokens = tokens;
-    }
-    
-    public String getToken(String provider) {
-        return tokens.get(provider);
-    }
-    
-    public void setToken(String provider, String token) {
-        tokens.put(provider, token);
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                .anyRequest().permitAll()
+            )
+            .httpBasic(withDefaults());
+        
+        return http.build();
     }
 }

@@ -8,21 +8,24 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * Data Transfer Object for Git pull/merge requests
+ * DTO for Git pull/merge requests
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class PullRequestDTO {
-    private Long id;
-    private Integer number;
+    private String id;
+    private int number;
     private String title;
     private String description;
-    private String author;
     private String state;
-    private LocalDateTime createdAt;
+    private String author;
     private String sourceBranch;
     private String targetBranch;
-    private String repositoryId;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private boolean isMerged;
+    private boolean isDraft;
+    private String url;
 }

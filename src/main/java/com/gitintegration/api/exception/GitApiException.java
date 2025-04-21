@@ -1,7 +1,7 @@
 package com.gitintegration.api.exception;
 
 /**
- * Custom exception for Git API operations
+ * Custom exception for Git API related errors
  */
 public class GitApiException extends RuntimeException {
     

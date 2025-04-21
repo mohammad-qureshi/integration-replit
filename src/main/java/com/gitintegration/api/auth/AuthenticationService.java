@@ -1,95 +1,128 @@
 package com.gitintegration.api.auth;
 
-import com.gitintegration.api.config.GitServiceFactory;
+import com.gitintegration.api.exception.GitApiException;
 import com.gitintegration.api.service.GitService;
+import com.gitintegration.api.config.GitServiceFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Service for handling Git provider authentication
+ * Service for managing authentication with Git providers
  */
 @Service
 @Slf4j
 public class AuthenticationService {
     
-    private final AuthenticationConfiguration authConfig;
     private final GitServiceFactory gitServiceFactory;
-    private final Map<String, Boolean> authenticationStatus = new HashMap<>();
     
-    public AuthenticationService(AuthenticationConfiguration authConfig, GitServiceFactory gitServiceFactory) {
-        this.authConfig = authConfig;
+    // For in-memory token storage (would use a secure vault in production)
+    private final Map<String, String> authTokens = new ConcurrentHashMap<>();
+    
+    @Value("${git.auth.tokens.github:}")
+    private String githubToken;
+    
+    @Value("${git.auth.tokens.gitlab:}")
+    private String gitlabToken;
+    
+    public AuthenticationService(GitServiceFactory gitServiceFactory) {
         this.gitServiceFactory = gitServiceFactory;
     }
     
     /**
-     * Initialize authentication for all providers with configured tokens
+     * Initialize authentication from environment variables or properties
+     * Called after dependencies are injected
      */
-    @PostConstruct
     public void init() {
-        for (String provider : gitServiceFactory.getAvailableProviders()) {
-            String token = authConfig.getToken(provider);
-            if (token != null && !token.isEmpty()) {
-                authenticate(provider, token);
-            }
+        // Try to authenticate with tokens provided by properties/env vars
+        if (githubToken != null && !githubToken.isEmpty()) {
+            authenticate("github", githubToken);
+        }
+        
+        if (gitlabToken != null && !gitlabToken.isEmpty()) {
+            authenticate("gitlab", gitlabToken);
         }
     }
     
     /**
-     * Authenticate a Git provider with the given token
-     * @param provider the provider name
+     * Authenticate with a Git provider
+     * @param provider the Git provider (e.g., "github", "gitlab")
      * @param token the authentication token
      * @return true if authentication was successful
      */
     public boolean authenticate(String provider, String token) {
+        if (provider == null || token == null || token.isEmpty()) {
+            return false;
+        }
+        
+        String normalizedProvider = provider.toLowerCase();
         try {
-            GitService service = gitServiceFactory.getService(provider);
-            boolean success = service.authenticate(token);
+            GitService service = gitServiceFactory.getService(normalizedProvider);
+            service.setAuthToken(token);
             
-            if (success) {
-                authConfig.setToken(provider, token);
-                authenticationStatus.put(provider, true);
-                log.info("Successfully authenticated with {} provider", provider);
+            // Verify token by making a test request
+            if (service.isAuthenticated()) {
+                authTokens.put(normalizedProvider, token);
+                log.info("Successfully authenticated with {}", normalizedProvider);
+                return true;
             } else {
-                authenticationStatus.put(provider, false);
-                log.warn("Failed to authenticate with {} provider", provider);
+                log.warn("Failed to authenticate with {}", normalizedProvider);
+                return false;
             }
-            
-            return success;
-        } catch (Exception e) {
-            log.error("Error authenticating with {} provider: {}", provider, e.getMessage());
-            authenticationStatus.put(provider, false);
+        } catch (GitApiException e) {
+            log.error("Error authenticating with {}: {}", normalizedProvider, e.getMessage());
             return false;
         }
     }
     
     /**
-     * Check if a provider is authenticated
-     * @param provider the provider name
-     * @return true if the provider is authenticated
+     * Check if authenticated with a Git provider
+     * @param provider the Git provider
+     * @return true if authenticated
      */
     public boolean isAuthenticated(String provider) {
-        Boolean status = authenticationStatus.get(provider);
-        return status != null && status;
+        String normalizedProvider = provider.toLowerCase();
+        return authTokens.containsKey(normalizedProvider);
     }
     
     /**
-     * Get the token for a provider
-     * @param provider the provider name
-     * @return the authentication token, or null if not found
+     * Get the authentication token for a provider
+     * @param provider the Git provider
+     * @return the token if authenticated, or null
      */
     public String getToken(String provider) {
-        return authConfig.getToken(provider);
+        String normalizedProvider = provider.toLowerCase();
+        return authTokens.get(normalizedProvider);
     }
     
     /**
-     * Get the authentication status for all providers
-     * @return a map of provider -> authentication status
+     * Get authentication status for all providers
+     * @return map of provider names to authentication status
      */
     public Map<String, Boolean> getAuthenticationStatus() {
-        return new HashMap<>(authenticationStatus);
+        Map<String, Boolean> status = new HashMap<>();
+        for (String provider : gitServiceFactory.getAvailableProviders()) {
+            status.put(provider, isAuthenticated(provider));
+        }
+        return status;
+    }
+    
+    /**
+     * Revoke authentication for a provider
+     * @param provider the Git provider
+     * @return true if revoked, false if not authenticated
+     */
+    public boolean revokeAuthentication(String provider) {
+        String normalizedProvider = provider.toLowerCase();
+        String token = authTokens.remove(normalizedProvider);
+        if (token != null) {
+            log.info("Revoked authentication for {}", normalizedProvider);
+            return true;
+        }
+        return false;
     }
 }
