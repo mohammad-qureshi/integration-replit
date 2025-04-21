@@ -20,6 +20,38 @@ import java.util.*;
 @Service
 @Slf4j
 public class GitLabServiceImpl implements GitLabService {
+    
+    @Override
+    public List<PullRequestDTO> getMergeRequests(String projectId, String state) {
+        try {
+            return webClient.get()
+                    .uri("/projects/{projectId}/merge_requests?state={state}", projectId, state)
+                    .headers(this::setAuthHeader)
+                    .retrieve()
+                    .bodyToFlux(Map.class)
+                    .map(mr -> mapToPullRequestDTO(mr, projectId))
+                    .collectList()
+                    .block();
+        } catch (Exception e) {
+            log.error("Failed to get merge requests for project {}: {}", projectId, e.getMessage());
+            throw new GitApiException("Failed to get merge requests", e);
+        }
+    }
+
+    private PullRequestDTO mapToPullRequestDTO(Map<String, Object> mr, String projectId) {
+        return PullRequestDTO.builder()
+                .id(Long.valueOf(mr.get("id").toString()))
+                .number(Integer.valueOf(mr.get("iid").toString()))
+                .title((String) mr.get("title"))
+                .description((String) mr.get("description"))
+                .author((String) ((Map)mr.get("author")).get("username"))
+                .state((String) mr.get("state"))
+                .createdAt(LocalDateTime.parse((String) mr.get("created_at"), DateTimeFormatter.ISO_DATE_TIME))
+                .sourceBranch((String) mr.get("source_branch"))
+                .targetBranch((String) mr.get("target_branch"))
+                .repositoryId(projectId)
+                .build();
+    }
 
     private final WebClient webClient;
     private String token;
@@ -59,6 +91,12 @@ public class GitLabServiceImpl implements GitLabService {
     @Override
     public boolean isAuthenticated() {
         return authenticated;
+    }
+
+    @Override
+    public void setAuthToken(String token) {
+        this.token = token;
+        authenticate(token);
     }
 
     @Override

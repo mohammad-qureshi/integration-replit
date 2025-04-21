@@ -13,7 +13,7 @@ import java.util.Optional;
  * Interface for GitLab API operations
  */
 public interface GitLabService extends GitService {
-    
+
     /**
      * Parse a GitLab repository identifier
      * Format: "project_id"
@@ -21,7 +21,7 @@ public interface GitLabService extends GitService {
      * @return project id
      */
     String parseRepositoryId(String repositoryId);
-    
+
     /**
      * Get merge requests from a GitLab project
      * @param projectId GitLab project ID
