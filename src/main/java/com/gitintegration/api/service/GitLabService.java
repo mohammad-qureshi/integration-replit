@@ -21,4 +21,12 @@ public interface GitLabService extends GitService {
      * @return project id
      */
     String parseRepositoryId(String repositoryId);
+    
+    /**
+     * Get merge requests from a GitLab project
+     * @param projectId GitLab project ID
+     * @param state filter by state (opened/closed/merged/all)
+     * @return list of merge requests
+     */
+    List<PullRequestDTO> getMergeRequests(String projectId, String state);
 }

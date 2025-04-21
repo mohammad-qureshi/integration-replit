@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PullRequestDTO {
-    private String id;
+    private Long id;
     private int number;
     private String title;
     private String description;

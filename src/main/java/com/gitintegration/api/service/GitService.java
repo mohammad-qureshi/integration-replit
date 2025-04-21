@@ -151,6 +151,13 @@ public interface GitService {
      * @return true if authenticated
      */
     boolean isAuthenticated();
+
+    /**
+     * Set authentication token
+     * @param token the authentication token
+     */
+    void setAuthToken(String token);
+    boolean isAuthenticated();
     
     /**
      * Set the authentication token
