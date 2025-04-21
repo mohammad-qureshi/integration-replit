@@ -3,96 +3,46 @@ package com.gitintegration.api.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Global exception handler for the application.
- * Maps exceptions to appropriate HTTP responses.
+ * Global exception handler for the application
  */
 @ControllerAdvice
 @Slf4j
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    /**
-     * Handles GitApiException.
-     * 
-     * @param ex The exception
-     * @return ResponseEntity with error details
-     */
     @ExceptionHandler(GitApiException.class)
-    public ResponseEntity<Map<String, Object>> handleGitApiException(GitApiException ex) {
-        log.error("Git API exception: {}", ex.getMessage());
-        
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", ex.getStatusCode());
-        body.put("error", "Git API Error");
-        body.put("message", ex.getMessage());
-        
-        return new ResponseEntity<>(body, HttpStatus.valueOf(ex.getStatusCode()));
+    public ResponseEntity<Object> handleGitApiException(GitApiException ex) {
+        log.error("Git API Exception: {}", ex.getMessage());
+        return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
-    
-    /**
-     * Handles MissingServletRequestParameterException.
-     * 
-     * @param ex The exception
-     * @return ResponseEntity with error details
-     */
-    @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<Map<String, Object>> handleMissingParams(MissingServletRequestParameterException ex) {
-        log.error("Missing parameter: {}", ex.getMessage());
-        
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("error", "Bad Request");
-        body.put("message", "Missing required parameter: " + ex.getParameterName());
-        
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Object> handleIllegalArgumentException(IllegalArgumentException ex) {
+        log.error("Illegal Argument Exception: {}", ex.getMessage());
+        return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
-    
-    /**
-     * Handles MethodArgumentTypeMismatchException.
-     * 
-     * @param ex The exception
-     * @return ResponseEntity with error details
-     */
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        log.error("Type mismatch: {}", ex.getMessage());
-        
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("error", "Bad Request");
-        body.put("message", "Invalid value for parameter: " + ex.getName());
-        
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
-    }
-    
-    /**
-     * Handles all other exceptions.
-     * 
-     * @param ex The exception
-     * @return ResponseEntity with error details
-     */
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
-        log.error("Unexpected error", ex);
-        
+    public ResponseEntity<Object> handleAllUncaughtException(Exception ex) {
+        log.error("Unexpected error occurred: ", ex);
+        return buildErrorResponse("An unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    private ResponseEntity<Object> buildErrorResponse(String message, HttpStatus status) {
         Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        body.put("error", "Internal Server Error");
-        body.put("message", "An unexpected error occurred");
+        body.put("timestamp", LocalDateTime.now().toString());
+        body.put("status", status.value());
+        body.put("error", status.getReasonPhrase());
+        body.put("message", message);
         
-        return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(body, status);
     }
 }
