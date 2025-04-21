@@ -1,0 +1,98 @@
+/* Custom styles to complement Bootstrap */
+
+body {
+    padding-top: 1rem;
+}
+
+/* Icon styles */
+.feather {
+    width: 18px;
+    height: 18px;
+    vertical-align: text-bottom;
+    margin-right: 4px;
+}
+
+/* Card enhancements */
+.card {
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    font-weight: 600;
+}
+
+/* Nav tabs improvements */
+.nav-tabs {
+    border-bottom-width: 2px;
+    margin-bottom: 1rem;
+}
+
+.nav-tabs .nav-link {
+    padding: 0.75rem 1rem;
+    border-radius: 0.25rem 0.25rem 0 0;
+}
+
+/* Table styles */
+.table-responsive {
+    border-radius: 0.25rem;
+    overflow: hidden;
+}
+
+.table th {
+    font-weight: 600;
+    background-color: var(--bs-dark);
+}
+
+/* Loading spinner container */
+.spinner-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+}
+
+/* Better spacing for form elements */
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+/* Improve code display */
+code {
+    padding: 0.15rem 0.35rem;
+    border-radius: 0.25rem;
+    background-color: var(--bs-dark);
+    color: var(--bs-info);
+}
+
+/* Container for branch, commit, PR data */
+.github-data-container,
+.gitlab-data-container,
+.unified-data-container {
+    min-height: 200px;
+}
+
+/* Accordion customizations */
+.accordion-button:not(.collapsed) {
+    background-color: var(--bs-dark);
+    color: var(--bs-light);
+}
+
+/* API docs section */
+.list-group-item {
+    background-color: transparent;
+    border-color: var(--bs-dark);
+}
+
+/* Tab content animations */
+.tab-pane.fade {
+    transition: opacity 0.2s linear;
+}
+
+/* Footer styling */
+footer {
+    border-top: 1px solid var(--bs-dark);
+    padding-top: 1rem;
+}
