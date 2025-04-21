@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * Data Transfer Object for Git commits
+ * DTO for Git commits
  */
 @Data
 @Builder
@@ -18,6 +18,7 @@ public class CommitDTO {
     private String sha;
     private String message;
     private String author;
+    private String authorEmail;
     private LocalDateTime timestamp;
-    private String repositoryId;
+    private String url;
 }

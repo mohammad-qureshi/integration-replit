@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Data Transfer Object for Git repositories
+ * DTO for Git repositories
  */
 @Data
 @Builder
@@ -16,8 +16,10 @@ public class RepositoryDTO {
     private String id;
     private String name;
     private String fullName;
-    private String url;
     private String description;
+    private String url;
     private String defaultBranch;
-    private String providerId;
+    private String owner;
+    private boolean isPrivate;
+    private boolean isFork;
 }

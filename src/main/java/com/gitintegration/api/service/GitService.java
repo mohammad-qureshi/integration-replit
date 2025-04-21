@@ -6,151 +6,142 @@ import com.gitintegration.api.dto.PullRequestDTO;
 import com.gitintegration.api.dto.RepositoryDTO;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
- * Interface for Git services (GitHub, GitLab, etc.)
- * This follows the Strategy pattern, where different implementations
- * can be provided for different Git providers.
+ * Common interface for Git provider services (GitHub, GitLab)
+ * This follows the Strategy pattern - allows different git provider implementations
+ * to be used interchangeably
  */
 public interface GitService {
-
+    
     /**
-     * Get provider identifier
-     * @return the provider identifier string (e.g., "github", "gitlab")
-     */
-    String getProviderName();
-
-    /**
-     * Authenticate with the Git provider
-     * @param token the authentication token
-     * @return true if authentication was successful
-     */
-    boolean authenticate(String token);
-
-    /**
-     * Check if the service is authenticated
-     * @return true if the service is authenticated
-     */
-    boolean isAuthenticated();
-
-    /**
-     * Get a list of repositories for the authenticated user
+     * Get authenticated user's repositories from the Git provider
      * @return list of repositories
      */
     List<RepositoryDTO> getRepositories();
-
+    
     /**
-     * Get a specific repository by owner/name for GitHub or id for GitLab
-     * @param repositoryId repository identifier (format depends on provider)
+     * Get a specific repository
+     * @param repositoryId repository identifier (differs by provider)
      * @return the repository if found
      */
     Optional<RepositoryDTO> getRepository(String repositoryId);
-
+    
     /**
-     * Get branches from a repository
-     * @param repositoryId repository identifier (format depends on provider)
+     * Get branches for a repository
+     * @param repositoryId repository identifier
      * @return list of branches
      */
     List<BranchDTO> getBranches(String repositoryId);
-
+    
     /**
-     * Get a specific branch from a repository
-     * @param repositoryId repository identifier (format depends on provider)
+     * Get a specific branch
+     * @param repositoryId repository identifier
      * @param branchName branch name
      * @return the branch if found
      */
     Optional<BranchDTO> getBranch(String repositoryId, String branchName);
-
+    
     /**
-     * Create a new branch in a repository
-     * @param repositoryId repository identifier (format depends on provider)
-     * @param branchName name of the branch to create
-     * @param sourceBranchName name of the source branch
+     * Create a new branch
+     * @param repositoryId repository identifier
+     * @param branchName name for the new branch
+     * @param sourceBranch source branch to create from
      * @return the created branch
      */
-    BranchDTO createBranch(String repositoryId, String branchName, String sourceBranchName);
-
+    BranchDTO createBranch(String repositoryId, String branchName, String sourceBranch);
+    
     /**
-     * Delete a branch from a repository
-     * @param repositoryId repository identifier (format depends on provider)
-     * @param branchName name of the branch to delete
-     * @return true if deletion was successful
+     * Delete a branch
+     * @param repositoryId repository identifier
+     * @param branchName branch name to delete
+     * @return true if deleted successfully
      */
     boolean deleteBranch(String repositoryId, String branchName);
-
+    
     /**
-     * Get commits from a repository
-     * @param repositoryId repository identifier (format depends on provider)
-     * @param branchName optional branch name to filter commits
-     * @param limit maximum number of commits to return
+     * Get commits for a repository branch
+     * @param repositoryId repository identifier
+     * @param branch optional branch name (default branch if not specified)
+     * @param limit maximum number of commits to retrieve
      * @return list of commits
      */
-    List<CommitDTO> getCommits(String repositoryId, String branchName, int limit);
-
+    List<CommitDTO> getCommits(String repositoryId, String branch, int limit);
+    
     /**
-     * Get a specific commit from a repository
-     * @param repositoryId repository identifier (format depends on provider)
-     * @param commitId commit identifier (SHA)
+     * Get a specific commit
+     * @param repositoryId repository identifier
+     * @param commitId commit identifier
      * @return the commit if found
      */
     Optional<CommitDTO> getCommit(String repositoryId, String commitId);
-
+    
     /**
-     * Create a new commit in a repository
-     * @param repositoryId repository identifier (format depends on provider)
-     * @param branchName branch name for the commit
+     * Create a commit
+     * @param repositoryId repository identifier
+     * @param branch branch to commit to
      * @param message commit message
-     * @param files files to change in the commit (path -> content)
+     * @param files map of file paths to file content
      * @return the created commit
      */
-    CommitDTO createCommit(String repositoryId, String branchName, String message, 
-                           java.util.Map<String, String> files);
-
+    CommitDTO createCommit(String repositoryId, String branch, String message, Map<String, String> files);
+    
     /**
-     * Get pull/merge requests from a repository
-     * @param repositoryId repository identifier (format depends on provider)
-     * @param state filter by state (e.g., "open", "closed", "all")
+     * Get pull/merge requests for a repository
+     * @param repositoryId repository identifier
+     * @param state filter by state (open/closed/all)
      * @return list of pull/merge requests
      */
     List<PullRequestDTO> getPullRequests(String repositoryId, String state);
-
+    
     /**
-     * Get a specific pull/merge request from a repository
-     * @param repositoryId repository identifier (format depends on provider)
+     * Get a specific pull/merge request
+     * @param repositoryId repository identifier
      * @param pullRequestId pull/merge request identifier
      * @return the pull/merge request if found
      */
     Optional<PullRequestDTO> getPullRequest(String repositoryId, String pullRequestId);
-
+    
     /**
-     * Create a new pull/merge request
-     * @param repositoryId repository identifier (format depends on provider)
-     * @param title title of the pull/merge request
+     * Create a pull/merge request
+     * @param repositoryId repository identifier
+     * @param title pull/merge request title
      * @param sourceBranch source branch
      * @param targetBranch target branch
-     * @param description description of the pull/merge request
+     * @param description optional description
      * @return the created pull/merge request
      */
-    PullRequestDTO createPullRequest(String repositoryId, String title, 
-                                    String sourceBranch, String targetBranch, 
-                                    String description);
-
+    PullRequestDTO createPullRequest(String repositoryId, String title, String sourceBranch, 
+                                   String targetBranch, String description);
+    
     /**
-     * Update a pull/merge request
-     * @param repositoryId repository identifier (format depends on provider)
+     * Update a pull/merge request state
+     * @param repositoryId repository identifier
      * @param pullRequestId pull/merge request identifier
-     * @param state new state for the pull/merge request
+     * @param state new state
      * @return the updated pull/merge request
      */
-    PullRequestDTO updatePullRequest(String repositoryId, String pullRequestId, 
-                                    String state);
-
+    PullRequestDTO updatePullRequest(String repositoryId, String pullRequestId, String state);
+    
     /**
      * Merge a pull/merge request
-     * @param repositoryId repository identifier (format depends on provider)
+     * @param repositoryId repository identifier
      * @param pullRequestId pull/merge request identifier
-     * @return true if merge was successful
+     * @return true if merged successfully
      */
     boolean mergePullRequest(String repositoryId, String pullRequestId);
+    
+    /**
+     * Check if this service is authenticated
+     * @return true if authenticated
+     */
+    boolean isAuthenticated();
+    
+    /**
+     * Set the authentication token
+     * @param token authentication token
+     */
+    void setAuthToken(String token);
 }

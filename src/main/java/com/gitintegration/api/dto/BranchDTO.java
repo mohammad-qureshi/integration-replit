@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Data Transfer Object for Git branches
+ * DTO for Git branches
  */
 @Data
 @Builder
@@ -15,5 +15,5 @@ import lombok.NoArgsConstructor;
 public class BranchDTO {
     private String name;
     private String commitSha;
-    private String repositoryId;
+    private boolean isProtected;
 }
