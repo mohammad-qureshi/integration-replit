@@ -9,6 +9,7 @@
 /home/runner/workspace/src/main/java/com/gitintegration/api/service/impl/GitLabServiceImpl.java
 /home/runner/workspace/src/main/java/com/gitintegration/api/dto/BranchDTO.java
 /home/runner/workspace/src/main/java/com/gitintegration/api/config/WebClientConfig.java
+/home/runner/workspace/src/main/java/com/gitintegration/api/controller/AuthController.java
 /home/runner/workspace/src/main/java/com/gitintegration/api/exception/GitApiException.java
 /home/runner/workspace/src/main/java/com/gitintegration/api/binding/RepositoryBindingService.java
 /home/runner/workspace/src/main/java/com/gitintegration/api/auth/AuthenticationResponseDTO.java
