@@ -2,9 +2,9 @@ package com.gitintegration.api.controller;
 
 import com.gitintegration.api.auth.AuthenticationRequestDTO;
 import com.gitintegration.api.service.GitService;
-import com.gitintegration.api.service.AuthenticationService;
+import com.gitintegration.api.service.AuthenticationService; // Added import
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Qualifier; // Added import
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,16 +14,12 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final GitService gitService;
-    private final AuthenticationService authService;
-
-    public AuthController(GitService gitService, AuthenticationService authService) {
-        this.gitService = gitService;
-        this.authService = authService;
-    }
+    @Qualifier("authenticationService") // Added @Qualifier
+    private final AuthenticationService authService; // Added AuthenticationService dependency
 
     @PostMapping("/authenticate")
     public ResponseEntity<Boolean> authenticate(@RequestBody AuthenticationRequestDTO request) {
-        boolean authenticated = authService.authenticate(request.getToken());
+        boolean authenticated = authService.authenticate(request.getToken()); // Changed to use authService
         return ResponseEntity.ok(authenticated);
     }
 }
