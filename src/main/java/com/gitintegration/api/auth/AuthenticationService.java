@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Service for managing authentication with Git providers
  */
-@Service
+@Service("authenticationService")
 @Slf4j
 public class AuthenticationService {
     
