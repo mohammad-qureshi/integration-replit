@@ -17,7 +17,7 @@ import java.util.List;
 @Configuration
 public class OpenApiConfig {
 
-    @Value("${springdoc.server.url:http://localhost:8000}")
+    @Value("${springdoc.server.url:http://localhost:8080}")
     private String serverUrl;
 
     /**

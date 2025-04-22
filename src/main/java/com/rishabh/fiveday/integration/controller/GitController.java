@@ -18,6 +18,7 @@ import com.rishabh.fiveday.integration.dto.BranchDTO;
 import com.rishabh.fiveday.integration.dto.CommitDTO;
 import com.rishabh.fiveday.integration.dto.PullRequestDTO;
 import com.rishabh.fiveday.integration.dto.RepositoryDTO;
+import com.rishabh.fiveday.integration.service.GitHubService;
 import com.rishabh.fiveday.integration.service.GitService;
 
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GitController {
     
-    private final GitService gitService;
+    private final GitHubService gitService;
     
     @GetMapping("/repositories")
     public ResponseEntity<List<RepositoryDTO>> getRepositories() {
