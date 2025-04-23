@@ -1,6 +1,13 @@
 package com.rishabh.fiveday.integration.service.impl;
 
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -12,15 +19,13 @@ import com.rishabh.fiveday.integration.dto.CommitDTO;
 import com.rishabh.fiveday.integration.dto.PullRequestDTO;
 import com.rishabh.fiveday.integration.dto.RepositoryDTO;
 import com.rishabh.fiveday.integration.exception.GitApiException;
-import com.rishabh.fiveday.integration.service.GitLabService;
+import com.rishabh.fiveday.integration.service.GitService;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
-public class GitLabServiceImpl implements GitLabService {
+public class GitLabServiceImpl implements GitService {
 
     private final WebClient webClient;
     private String token;
@@ -310,33 +315,7 @@ public class GitLabServiceImpl implements GitLabService {
             throw new GitApiException("Failed to get merge requests for repository: " + repositoryId, e);
         }
     }
-    @Override
-    public List<PullRequestDTO> getMergeRequests(String projectId, String state) {
-        try {
-            String gitLabState = mapToGitLabState(state);
-            List<Map<String, Object>> mrList = webClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/projects/{projectId}/merge_requests")
-                            .queryParam("state", gitLabState)
-                            .build(projectId))
-                    .headers(this::setAuthHeader)
-                    .retrieve()
-                    .bodyToMono(List.class)
-                    .block();
-
-            List<PullRequestDTO> mergeRequests = new ArrayList<>();
-            if (mrList != null) {
-                for (Map<String, Object> mr : mrList) {
-                    mergeRequests.add(mapToPullRequestDTO(mr, projectId));
-                }
-            }
-            return mergeRequests;
-        } catch (Exception e) {
-            log.error("Failed to get GitLab merge requests: {}", e.getMessage());
-            throw new GitApiException("Failed to get GitLab merge requests", e);
-        }
-    }
-
+    
     @Override
     public Optional<PullRequestDTO> getPullRequest(String repositoryId, String pullRequestId) {
         try {
@@ -523,8 +502,8 @@ public class GitLabServiceImpl implements GitLabService {
                 return "reopen";
         }
     }
-    @Override
-    public String parseRepositoryId(String repositoryId) {
+    
+    private String parseRepositoryId(String repositoryId) {
         try {
             return repositoryId.replace("/", "%2F");
         } catch (Exception e) {

@@ -1,6 +1,13 @@
 package com.rishabh.fiveday.integration.service.impl;
 
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -12,21 +19,16 @@ import com.rishabh.fiveday.integration.dto.CommitDTO;
 import com.rishabh.fiveday.integration.dto.PullRequestDTO;
 import com.rishabh.fiveday.integration.dto.RepositoryDTO;
 import com.rishabh.fiveday.integration.exception.GitApiException;
-import com.rishabh.fiveday.integration.service.GitHubService;
 import com.rishabh.fiveday.integration.service.GitService;
 
-import reactor.core.publisher.Mono;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * GitHub implementation of the GitService interface
  */
 @Service
 @Slf4j
-public class GitHubServiceImpl implements GitHubService {
+public class GitHubServiceImpl implements GitService {
 
     private final WebClient webClient;
     private String token;
@@ -140,8 +142,7 @@ public class GitHubServiceImpl implements GitHubService {
         }
     }
     
-    @Override
-    public List<BranchDTO> getBranches(String owner, String repo) {
+    private List<BranchDTO> getBranches(String owner, String repo) {
         try {
             String repositoryId = owner + "/" + repo;
             List<Map<String, Object>> branchList = webClient.get()
@@ -261,8 +262,7 @@ public class GitHubServiceImpl implements GitHubService {
         }
     }
     
-    @Override
-    public List<CommitDTO> getCommits(String owner, String repo, String branchName, int limit) {
+    private List<CommitDTO> getCommits(String owner, String repo, String branchName, int limit) {
         try {
             String repositoryId = owner + "/" + repo;
             
@@ -443,8 +443,7 @@ public class GitHubServiceImpl implements GitHubService {
         }
     }
     
-    @Override
-    public List<PullRequestDTO> getPullRequests(String owner, String repo, String state) {
+    private List<PullRequestDTO> getPullRequests(String owner, String repo, String state) {
         try {
             String repositoryId = owner + "/" + repo;
             
@@ -587,7 +586,7 @@ public class GitHubServiceImpl implements GitHubService {
     }
 
     public String[] parseRepositoryId(String repositoryId) {
-        String[] parts = repositoryId.split("/");
+        String[] parts = repositoryId.split("___");
         if (parts.length != 2) {
             throw new IllegalArgumentException("Invalid GitHub repository ID format. Expected: 'owner/repo'");
         }

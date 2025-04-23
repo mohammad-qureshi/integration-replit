@@ -1,13 +1,17 @@
 package com.rishabh.fiveday.integration.config;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.stereotype.Component;
 
 import com.rishabh.fiveday.integration.exception.GitApiException;
-import com.rishabh.fiveday.integration.service.GitHubService;
-import com.rishabh.fiveday.integration.service.GitLabService;
 import com.rishabh.fiveday.integration.service.GitService;
-
-import java.util.*;
+import com.rishabh.fiveday.integration.service.impl.GitHubServiceImpl;
+import com.rishabh.fiveday.integration.service.impl.GitLabServiceImpl;
 
 /**
  * Factory for creating GitService implementations based on provider
@@ -19,7 +23,7 @@ public class GitServiceFactory {
     private final Map<String, GitService> serviceMap = new HashMap<>();
     private final List<String> availableProviders = new ArrayList<>();
     
-    public GitServiceFactory(GitHubService gitHubService, GitLabService gitLabService) {
+    public GitServiceFactory(GitHubServiceImpl gitHubService, GitLabServiceImpl gitLabService) {
         // Register services
         serviceMap.put("github", gitHubService);
         serviceMap.put("gitlab", gitLabService);
@@ -44,6 +48,17 @@ public class GitServiceFactory {
         
         return service;
     }
+    
+    // getService method based on tenant
+    // get tenatId from TenantContext
+    // then get the provider from redis cache based on tenantId
+    // then call the getService method with the provider
+	public GitService getService() {
+//		String tenantId = TenantContext.getTenantId();
+		String provider = "github";//getProviderFromCache(tenantId);
+		return getService(provider);
+	}
+    
     
     /**
      * Get all available Git providers
